@@ -1,0 +1,151 @@
+﻿@page "/examen"
+@rendermode InteractiveServer
+@using System.Collections.Generic
+@using System.ComponentModel.DataAnnotations
+
+<h2>Inventario</h2>
+@if (alert != false)
+{
+    <div class="alert alert-danger" role="alert">
+        <p>@msg</p>
+    </div>
+}
+<EditForm Model="product" OnValidSubmit="Agregar">
+    <DataAnnotationsValidator />
+    <div class="row mb-3">
+        <label for="txtNombre" class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText class="form-control" id="txtNombre" @bind-Value="product.Nombre" />
+            <ValidationMessage For="@(()=>product.Nombre)" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtCorreo" class="col-2 col-form-label">Inventario</label>
+        <div class="col-10">
+            <InputNumber class="form-control" id="txtCorreo" @bind-Value="product.Inventario" />
+            <ValidationMessage For="@(()=>product.Inventario)" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtCalificacion" class="col-2 col-form-label">Departamento</label>
+        <div class="col-10">
+            <InputRadioGroup @bind-Value="product.Departamento">
+                @foreach (var item in Departamentos)
+                {
+                    <InputRadio Value="@item" id="@($"radio_{item}")" />
+                    <label for="@($"radio_{item}")">@item</label>
+                }
+                <ValidationMessage For="@(()=>product.Departamento)" />
+            </InputRadioGroup>
+        </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Enviar</button>
+    <button class="btn btn-primary"type="button" @onclick="MostrarExistencias">Existencias</button>
+
+</EditForm>
+
+
+
+@if (Productos != null && Productos.Count > 0)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Inventario</th>
+                <th scope="col">Departamento</th>
+                <th scope="col">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Productos)
+            {
+                <tr>
+                    <td>@item.Nombre</td>
+                    <td>@item.Inventario</td>
+                    <td>@item.Departamento</td>
+                    <td><button class="btn btn-danger" @onclick="() => Eliminar(item)">Eliminar</button></td>
+                    <td><button class="btn btn-info" @onclick="() => Editar(item)">Editar</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Producto product = new Producto("", 0, "");
+    private List<Producto> Productos = new List<Producto>();
+    List<string> Departamentos = new List<string> { "frutas", "verduras", "lacteos" };
+    private bool alert = false;
+    private string msg = "";
+    private string productForm = "productForm";
+
+    private void Agregar()
+    {
+        if (Verificar(product.Inventario))
+        {
+            alert = true;
+            msg = "No puedes utilizar un numero ya registrado";
+        }
+        else
+        {
+            alert = false;
+            msg = "";
+            Productos.Add(product);
+            product = new Producto("", 0, "");
+        }
+    }
+
+    private void Editar(Producto producto)
+    {
+        Eliminar(producto);
+        product.Nombre = producto.Nombre;
+        product.Departamento = producto.Departamento;
+        product.Inventario = producto.Inventario;
+    }
+    private void Eliminar(Producto product)
+    {
+        Productos.Remove(product);
+    }
+
+    private bool Verificar(int numero)
+    {
+        foreach (var producto in Productos)
+        {
+            if (producto.Inventario == numero)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    private void MostrarExistencias()
+    {
+        // Crear una lista para almacenar el número de productos por categoría
+        var existenciasPorCategoria = new List<(string categoria, int cantidad)>();
+
+        // Inicializar el conteo de productos por categoría
+        foreach (var categoria in Departamentos)
+        {
+            existenciasPorCategoria.Add((categoria, 0));
+        }
+
+        // Contar la cantidad de productos por categoría
+        foreach (var producto in Productos)
+        {
+            // Obtener el índice de la categoría en la lista
+            var index = existenciasPorCategoria.FindIndex(item => item.categoria == producto.Departamento);
+            // Incrementar el conteo de productos en esa categoría
+            existenciasPorCategoria[index] = (existenciasPorCategoria[index].categoria, existenciasPorCategoria[index].cantidad + 1);
+        }
+
+        // Mostrar el listado de existencias por categoría
+        foreach (var existencia in existenciasPorCategoria)
+        {
+            Console.WriteLine($"Categoría: {existencia.categoria}, Existencias: {existencia.cantidad}");
+        }
+    }
+
+
+
+}
